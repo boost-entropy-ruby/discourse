@@ -109,7 +109,7 @@ export const TIMEFRAMES = [
     displayWhen: false,
   }),
   buildTimeframe({
-    id: "pick_date_and_time",
+    id: "custom",
     enabled: (opts) => opts.includeDateTime,
     icon: "far-calendar-plus",
   }),
@@ -129,7 +129,7 @@ export const FORMAT = "YYYY-MM-DD HH:mmZ";
 export default ComboBoxComponent.extend(DatetimeMixin, {
   pluginApiIdentifiers: ["future-date-input-selector"],
   classNames: ["future-date-input-selector"],
-  isCustom: equal("value", "pick_date_and_time"),
+  isCustom: equal("value", "custom"),
 
   selectKitOptions: {
     autoInsertNoneItem: false,
@@ -162,7 +162,7 @@ export default ComboBoxComponent.extend(DatetimeMixin, {
     return TIMEFRAMES.filter((tf) => tf.enabled(opts)).map((tf) => {
       return {
         id: tf.id,
-        name: I18n.t(`topic.auto_update_input.${tf.id}`),
+        name: I18n.t(`time_shortcut.${tf.id}`),
         datetime: this._computeDatetimeForValue(tf.id),
         icons: this._computeIconsForValue(tf.id),
       };
@@ -171,7 +171,7 @@ export default ComboBoxComponent.extend(DatetimeMixin, {
 
   actions: {
     onChange(value) {
-      if (value !== "pick_date_and_time") {
+      if (value !== "custom") {
         const { time } = this._updateAt(value);
         if (time && !isEmpty(value)) {
           this.attrs.onChangeInput &&
