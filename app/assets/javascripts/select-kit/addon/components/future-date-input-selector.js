@@ -1,5 +1,4 @@
 import ComboBoxComponent from "select-kit/components/combo-box";
-import DatetimeMixin from "select-kit/components/future-date-input-selector/mixin";
 import I18n from "I18n";
 import { computed } from "@ember/object";
 import { equal } from "@ember/object/computed";
@@ -9,7 +8,6 @@ const TIMEFRAME_BASE = {
   enabled: () => true,
   when: () => null,
   icon: "briefcase",
-  displayWhen: true,
 };
 
 function buildTimeframe(opts) {
@@ -21,97 +19,90 @@ export const TIMEFRAMES = [
     id: "later_today",
     format: "h a",
     enabled: (opts) => opts.canScheduleLaterToday,
-    when: (time) => time.hour(18).minute(0),
+    when: moment().hour(18).minute(0),
     icon: "far-moon",
   }),
   buildTimeframe({
     id: "tomorrow",
     format: "ddd, h a",
-    when: (time, timeOfDay) => time.add(1, "day").hour(timeOfDay).minute(0),
+    when: moment().add(1, "day").hour(8).minute(0),
     icon: "far-sun",
   }),
   buildTimeframe({
     id: "later_this_week",
     format: "ddd, h a",
     enabled: (opts) => opts.canScheduleLaterThisWeek,
-    when: (time, timeOfDay) => time.add(2, "day").hour(timeOfDay).minute(0),
+    when: moment().add(2, "day").hour(8).minute(0),
   }),
   buildTimeframe({
     id: "this_weekend",
     format: "ddd, h a",
     enabled: (opts) => opts.canScheduleThisWeekend,
-    when: (time, timeOfDay) => time.day(6).hour(timeOfDay).minute(0),
+    when: moment().day(6).hour(8).minute(0),
     icon: "bed",
   }),
   buildTimeframe({
     id: "next_week",
     format: "ddd, h a",
     enabled: (opts) => opts.canScheduleNextWeek,
-    when: (time, timeOfDay) =>
-      time.add(1, "week").day(1).hour(timeOfDay).minute(0),
+    when: moment().add(1, "week").day(1).hour(8).minute(0),
     icon: "briefcase",
   }),
   buildTimeframe({
     id: "two_weeks",
     format: "MMM D",
-    when: (time, timeOfDay) => time.add(2, "week").hour(timeOfDay).minute(0),
+    when: moment().add(2, "week").hour(8).minute(0),
     icon: "briefcase",
   }),
   buildTimeframe({
     id: "next_month",
     format: "MMM D",
     enabled: (opts) => opts.canScheduleNextMonth,
-    when: (time, timeOfDay) =>
-      time.add(1, "month").startOf("month").hour(timeOfDay).minute(0),
+    when: moment().add(1, "month").startOf("month").hour(8).minute(0),
     icon: "briefcase",
   }),
   buildTimeframe({
     id: "two_months",
     format: "MMM D",
-    when: (time, timeOfDay) =>
-      time.add(2, "month").startOf("month").hour(timeOfDay).minute(0),
+    when: moment().add(2, "month").startOf("month").hour(8).minute(0),
     icon: "briefcase",
   }),
   buildTimeframe({
     id: "three_months",
     format: "MMM D",
-    when: (time, timeOfDay) =>
-      time.add(3, "month").startOf("month").hour(timeOfDay).minute(0),
+    when: moment().add(3, "month").startOf("month").hour(8).minute(0),
     icon: "briefcase",
   }),
   buildTimeframe({
     id: "four_months",
     format: "MMM D",
-    when: (time, timeOfDay) =>
-      time.add(4, "month").startOf("month").hour(timeOfDay).minute(0),
+    when: moment().add(4, "month").startOf("month").hour(8).minute(0),
     icon: "briefcase",
   }),
   buildTimeframe({
     id: "six_months",
     format: "MMM D",
-    when: (time, timeOfDay) =>
-      time.add(6, "month").startOf("month").hour(timeOfDay).minute(0),
+    when: moment().add(6, "month").startOf("month").hour(8).minute(0),
     icon: "briefcase",
   }),
   buildTimeframe({
     id: "one_year",
     format: "MMM D",
     enabled: (opts) => opts.includeFarFuture,
-    when: (time, timeOfDay) =>
-      time.add(1, "year").startOf("day").hour(timeOfDay).minute(0),
+    when: moment().add(1, "year").startOf("day").hour(8).minute(0),
     icon: "briefcase",
   }),
   buildTimeframe({
     id: "forever",
     enabled: (opts) => opts.includeFarFuture,
-    when: (time, timeOfDay) => time.add(1000, "year").hour(timeOfDay).minute(0),
+    when: moment().add(1000, "year").hour(8).minute(0),
     icon: "gavel",
-    displayWhen: false,
   }),
   buildTimeframe({
     id: "custom",
     enabled: (opts) => opts.includeDateTime,
     icon: "far-calendar-plus",
+    when: null,
   }),
 ];
 
@@ -126,7 +117,7 @@ export function timeframeDetails(id) {
 
 export const FORMAT = "YYYY-MM-DD HH:mmZ";
 
-export default ComboBoxComponent.extend(DatetimeMixin, {
+export default ComboBoxComponent.extend({
   pluginApiIdentifiers: ["future-date-input-selector"],
   classNames: ["future-date-input-selector"],
   isCustom: equal("value", "custom"),
@@ -159,20 +150,28 @@ export default ComboBoxComponent.extend(DatetimeMixin, {
       canScheduleNextMonth: canScheduleNextMonth,
     };
 
-    return TIMEFRAMES.filter((tf) => tf.enabled(opts)).map((tf) => {
+    return TIMEFRAMES.filter((tf) => tf.enabled(opts)).map((option) => {
       return {
-        id: tf.id,
-        name: I18n.t(`time_shortcut.${tf.id}`),
-        datetime: this._computeDatetimeForValue(tf.id),
-        icons: this._computeIconsForValue(tf.id),
+        id: option.id,
+        name: I18n.t(`time_shortcut.${option.id}`),
+        datetime: this._timeFormatted(option),
+        icons: [timeframeDetails(option.id).icon],
       };
     });
   }),
 
+  _timeFormatted(option) {
+    if (option.when && option.format) {
+      return option.when.format(option.format);
+    }
+
+    return null;
+  },
+
   actions: {
     onChange(value) {
       if (value !== "custom") {
-        const { time } = this._updateAt(value);
+        const time = timeframeDetails(value).when;
         if (time && !isEmpty(value)) {
           this.attrs.onChangeInput &&
             this.attrs.onChangeInput(time.locale("en").format(FORMAT));
