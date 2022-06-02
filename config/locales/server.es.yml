@@ -232,6 +232,7 @@ es:
       <p>Si no, <a href="%{base_url}/password-reset">restablece tu contraseña</a>.</p>
     not_found_template_link: |
       <p>Esta invitación a <a href="%{base_url}">%{site_name}</a> ya no se puede usar. Por favor, pídele a la persona que te invitó que te vuelva a enviar una nueva invitación.</p>
+    user_exists: "No hace falta que invites a <b>%{email}</b>, ¡ya tienen una cuenta!"
     invite_exists: "Ya has invitado a <b>%{email}</b>."
     invalid_email: "%{email} no es un correo electrónico válido."
     rate_limit:
@@ -1453,6 +1454,7 @@ es:
     show_pinned_excerpt_desktop: "Mostrar extracto de temas anclados en la vista de escritorio."
     post_onebox_maxlength: "Extensión máxima en caracteres de una publicación de Discourse en formato onebox."
     blocked_onebox_domains: "Una lista de dominios que nunca serán oneboxeados, p. ej., wikipedia.org\n(símbolos comodines * ? no soportados)"
+    block_onebox_on_redirect: "Bloquear onebox para URLs que redireccionen."
     allowed_inline_onebox_domains: "Una lista de dominios que serán oneboxed en forma de miniatura si están vinculados sin título"
     enable_inline_onebox_on_all_domains: "Ignorar el ajuste del sitio inline_onebox_domain_allowlist y permitir inline onebox en todos los dominios."
     force_custom_user_agent_hosts: "Hosts que se utilizará para el agente usuario personalizado de onebox en todas las solicitudes. (Especialmente útil para hosts que limitan el acceso por usuario agente)."
@@ -3641,6 +3643,7 @@ es:
     title: "¡Ups! Esa página es privada."
   site_setting_missing: "Debes rellenar el ajuste «%{name}»."
   page_not_found:
+    page_title: "Página no encontrada"
     title: "¡Ups! Esa página no existe o es privada."
     popular_topics: "Popular"
     recent_topics: "Recientes"

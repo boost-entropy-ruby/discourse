@@ -236,12 +236,13 @@ class Search
       term: clean_term,
       blurb_term: term,
       search_context: @search_context,
-      blurb_length: @blurb_length
+      blurb_length: @blurb_length,
+      is_header_search: !use_full_page_limit
     )
   end
 
   def limit
-    if @opts[:type_filter].present? && @opts[:type_filter] != "exclude_topics"
+    if use_full_page_limit
       Search.per_filter + 1
     else
       Search.per_facet + 1
@@ -258,6 +259,10 @@ class Search
 
   def valid?
     @valid
+  end
+
+  def use_full_page_limit
+    @opts[:search_type] == :full_page || Topic === @search_context
   end
 
   def self.execute(term, opts = nil)
@@ -459,16 +464,12 @@ class Search
   # search based on a RegisteredBookmarkable's #search_query method.
   advanced_filter(/^in:(bookmarks)$/i) do |posts, match|
     if @guardian.user
-      if SiteSetting.use_polymorphic_bookmarks
-        posts.where(<<~SQL)
-          posts.id IN (
-            SELECT bookmarkable_id FROM bookmarks
-            WHERE bookmarks.user_id = #{@guardian.user.id} AND bookmarks.bookmarkable_type = 'Post'
-          )
-        SQL
-      else
-        posts.where("posts.id IN (SELECT post_id FROM bookmarks WHERE bookmarks.user_id = #{@guardian.user.id})")
-      end
+      posts.where(<<~SQL)
+        posts.id IN (
+          SELECT bookmarkable_id FROM bookmarks
+          WHERE bookmarks.user_id = #{@guardian.user.id} AND bookmarks.bookmarkable_type = 'Post'
+        )
+      SQL
     end
   end
 

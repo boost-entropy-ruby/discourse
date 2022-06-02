@@ -300,7 +300,9 @@ const Post = RestModel.extend({
   },
 
   rebake() {
-    return ajax(`/posts/${this.id}/rebake`, { type: "PUT" });
+    return ajax(`/posts/${this.id}/rebake`, { type: "PUT" }).catch(
+      popupAjaxError
+    );
   },
 
   unhide() {
@@ -321,8 +323,6 @@ const Post = RestModel.extend({
       target: "post",
       targetId: this.id,
     });
-    // TODO (martin) (2022-02-01) Remove these old bookmark events, replaced by bookmarks:changed.
-    this.appEvents.trigger("page:bookmark-post-toggled", this);
     this.appEvents.trigger("post-stream:refresh", { id: this.id });
   },
 
@@ -344,8 +344,6 @@ const Post = RestModel.extend({
       target: "post",
       targetId: this.id,
     });
-    // TODO (martin) (2022-02-01) Remove these old bookmark events, replaced by bookmarks:changed.
-    this.appEvents.trigger("page:bookmark-post-toggled", this);
   },
 
   updateActionsSummary(json) {

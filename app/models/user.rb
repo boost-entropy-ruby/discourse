@@ -63,6 +63,7 @@ class User < ActiveRecord::Base
   has_many :muted_user_records, class_name: 'MutedUser', dependent: :delete_all
   has_many :ignored_user_records, class_name: 'IgnoredUser', dependent: :delete_all
   has_many :do_not_disturb_timings, dependent: :delete_all
+  has_one :user_status, dependent: :destroy
 
   # dependent deleting handled via before_destroy (special cases)
   has_many :user_actions
@@ -650,6 +651,14 @@ class User < ActiveRecord::Base
 
   def publish_do_not_disturb(ends_at: nil)
     MessageBus.publish("/do-not-disturb/#{id}", { ends_at: ends_at&.httpdate }, user_ids: [id])
+  end
+
+  def publish_user_status(status)
+    payload = status ?
+                { description: status.description, emoji: status.emoji } :
+                nil
+
+    MessageBus.publish("/user-status/#{id}", payload, user_ids: [id])
   end
 
   def password=(password)
@@ -1498,6 +1507,26 @@ class User < ActiveRecord::Base
     else
       name.presence || username
     end
+  end
+
+  def clear_status!
+    user_status.destroy! if user_status
+    publish_user_status(nil)
+  end
+
+  def set_status!(description)
+    now = Time.zone.now
+    if user_status
+      user_status.update!(description: description, set_at: now)
+    else
+      self.user_status = UserStatus.create!(
+        user_id: id,
+        description: description,
+        set_at: now
+      )
+    end
+
+    publish_user_status(user_status)
   end
 
   protected

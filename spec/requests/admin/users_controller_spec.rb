@@ -162,6 +162,7 @@ RSpec.describe Admin::UsersController do
       expect(user).to be_suspended
       expect(user.suspended_at).to be_present
       expect(user.suspended_till).to be_present
+      expect(user.suspend_record).to be_present
 
       log = UserHistory.where(target_user_id: user.id).order('id desc').first
       expect(log.details).to match(/because I said so/)
@@ -308,7 +309,8 @@ RSpec.describe Admin::UsersController do
     it "also prevents use of any api keys" do
       api_key = Fabricate(:api_key, user: user)
       post "/bookmarks.json", params: {
-        post_id: Fabricate(:post).id
+        bookmarkable_id: Fabricate(:post).id,
+        bookmarkable_type: "Post"
       }, headers: { HTTP_API_KEY: api_key.key }
       expect(response.status).to eq(200)
 
@@ -895,6 +897,7 @@ RSpec.describe Admin::UsersController do
       expect(response.status).to eq(200)
       reg_user.reload
       expect(reg_user).to be_silenced
+      expect(reg_user.silenced_record).to be_present
     end
 
     it "can have an associated post" do

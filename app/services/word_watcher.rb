@@ -7,17 +7,14 @@ class WordWatcher
     @raw = raw
   end
 
+  @cache_enabled = true
+
   def self.disable_cache
-    @disabled = true
+    @cache_enabled = false
   end
 
-  def self.enable_cache
-    @disabled = false
-  end
-
-  # Don't cache in tests mode
-  def self.cache_disabled?
-    @disabled
+  def self.cache_enabled?
+    @cache_enabled
   end
 
   def self.words_for_action(action)
@@ -37,12 +34,12 @@ class WordWatcher
   end
 
   def self.get_cached_words(action)
-    if cache_disabled?
-      words_for_action(action).presence
-    else
+    if cache_enabled?
       Discourse.cache.fetch(word_matcher_regexp_key(action), expires_in: 1.day) do
         words_for_action(action).presence
       end
+    else
+      words_for_action(action).presence
     end
   end
 
@@ -106,19 +103,16 @@ class WordWatcher
 
     doc = Nokogiri::HTML5::fragment(html)
     doc.traverse do |node|
-      if node.text?
-        node.content = node.content.gsub(regexp) do |match|
-          # the regex captures leading whitespaces
-          padding = match.size - match.lstrip.size
-          if padding > 0
-            match[0..padding - 1] + REPLACEMENT_LETTER * (match.size - padding)
-          else
-            REPLACEMENT_LETTER * match.size
-          end
-        end
-      end
+      node.content = censor_text_with_regexp(node.content, regexp) if node.text?
     end
     doc.to_s
+  end
+
+  def self.censor_text(text)
+    regexp = WordWatcher.word_matcher_regexp(:censor)
+    return text if regexp.blank?
+
+    censor_text_with_regexp(text, regexp)
   end
 
   def self.clear_cache!
@@ -174,5 +168,19 @@ class WordWatcher
 
   def word_matches?(word)
     Regexp.new(WordWatcher.word_to_regexp(word, whole: true), Regexp::IGNORECASE).match?(@raw)
+  end
+
+  private
+
+  def self.censor_text_with_regexp(text, regexp)
+    text.gsub(regexp) do |match|
+      # the regex captures leading whitespaces
+      padding = match.size - match.lstrip.size
+      if padding > 0
+        match[0..padding - 1] + REPLACEMENT_LETTER * (match.size - padding)
+      else
+        REPLACEMENT_LETTER * match.size
+      end
+    end
   end
 end

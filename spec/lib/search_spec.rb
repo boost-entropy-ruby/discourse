@@ -1482,20 +1482,8 @@ describe Search do
 
       it "can filter by posts in the user's bookmarks" do
         expect(search_with_bookmarks.posts.map(&:id)).to eq([])
-        Fabricate(:bookmark, user: user, post: bookmark_post1)
+        bm = Fabricate(:bookmark, user: user, bookmarkable: bookmark_post1)
         expect(search_with_bookmarks.posts.map(&:id)).to match_array([bookmark_post1.id])
-      end
-
-      context "using polymorphic bookmarks" do
-        before do
-          SiteSetting.use_polymorphic_bookmarks = true
-        end
-
-        it "can filter by posts in the user's bookmarks" do
-          expect(search_with_bookmarks.posts.map(&:id)).to eq([])
-          bm = Fabricate(:bookmark, user: user, bookmarkable: bookmark_post1)
-          expect(search_with_bookmarks.posts.map(&:id)).to match_array([bookmark_post1.id])
-        end
       end
     end
 
@@ -2195,24 +2183,26 @@ describe Search do
     let!(:post3) { Fabricate(:post, raw: 'hello hello hello') }
     let!(:post4) { Fabricate(:post, raw: 'hello hello') }
     let!(:post5) { Fabricate(:post, raw: 'hello') }
+
     before do
       Search.stubs(:per_filter).returns(number_of_results)
     end
 
     it 'returns more results flag' do
-      results = Search.execute('hello', type_filter: 'topic')
-      results2 = Search.execute('hello', type_filter: 'topic', page: 2)
+      results = Search.execute('hello', search_type: :full_page, type_filter: 'topic')
+      results2 = Search.execute('hello', search_type: :full_page, type_filter: 'topic', page: 2)
 
       expect(results.posts.length).to eq(number_of_results)
       expect(results.posts.map(&:id)).to eq([post1.id, post2.id])
       expect(results.more_full_page_results).to eq(true)
+
       expect(results2.posts.length).to eq(number_of_results)
       expect(results2.posts.map(&:id)).to eq([post3.id, post4.id])
       expect(results2.more_full_page_results).to eq(true)
     end
 
     it 'correctly search with page parameter' do
-      search = Search.new('hello', type_filter: 'topic', page: 3)
+      search = Search.new('hello', search_type: :full_page, type_filter: 'topic', page: 3)
       results = search.execute
 
       expect(search.offset).to eq(2 * number_of_results)
@@ -2221,6 +2211,36 @@ describe Search do
       expect(results.more_full_page_results).to eq(nil)
     end
 
+    it 'returns more results flag for header searches' do
+      results = Search.execute('hello', search_type: :header)
+      expect(results.posts.length).to eq(Search.per_facet)
+      expect(results.more_posts).to eq(nil) # not 6 posts yet
+
+      post6 = Fabricate(:post, raw: 'hello post #6')
+
+      results = Search.execute('hello', search_type: :header)
+      expect(results.posts.length).to eq(Search.per_facet)
+      expect(results.more_posts).to eq(true)
+    end
+  end
+
+  context 'header in-topic search' do
+    let!(:topic) { Fabricate(:topic, title: 'This is a topic with a bunch of posts') }
+    let!(:post1) { Fabricate(:post, topic: topic, raw: 'hola amiga') }
+    let!(:post2) { Fabricate(:post, topic: topic, raw: 'hola amigo') }
+    let!(:post3) { Fabricate(:post, topic: topic, raw: 'hola chica') }
+    let!(:post4) { Fabricate(:post, topic: topic, raw: 'hola chico') }
+    let!(:post5) { Fabricate(:post, topic: topic, raw: 'hola hermana') }
+    let!(:post6) { Fabricate(:post, topic: topic, raw: 'hola hermano') }
+    let!(:post7) { Fabricate(:post, topic: topic, raw: 'hola chiquito') }
+
+    it 'does not use per_facet pagination' do
+      search = Search.new('hola', search_type: :header, search_context: topic)
+      results = search.execute
+
+      expect(results.posts.length).to eq(7)
+      expect(results.more_posts).to eq(nil)
+    end
   end
 
   context 'in:tagged' do

@@ -63,6 +63,11 @@ import {
   setTestPresence,
 } from "discourse/lib/user-presence";
 import PreloadStore from "discourse/lib/preload-store";
+import { resetDefaultSectionLinks as resetTopicsSectionLinks } from "discourse/lib/sidebar/custom-topics-section-links";
+import {
+  clearBlockDecorateCallbacks,
+  clearTagDecorateCallbacks,
+} from "discourse/lib/to-markdown";
 
 const LEGACY_ENV = !setupApplicationTest;
 
@@ -186,6 +191,9 @@ function testCleanup(container, app) {
     clearPresenceCallbacks();
   }
   restoreBaseUri();
+  resetTopicsSectionLinks();
+  clearTagDecorateCallbacks();
+  clearBlockDecorateCallbacks();
 }
 
 export function discourseModule(name, options) {

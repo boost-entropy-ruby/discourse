@@ -361,6 +361,10 @@ basic:
     default: true
   sitemap_page_size:
     default: 10000
+  enable_user_status:
+    hidden: true
+    client: true
+    default: false
 
 login:
   invite_only:
@@ -1376,6 +1380,11 @@ files:
   s3_configure_inventory_policy:
     default: true
     hidden: true
+  s3_presigned_get_url_expires_after_seconds:
+    default: 300
+    hidden: true
+    min: 60
+    max: 604800
   allow_profile_backgrounds:
     client: true
     default: true
@@ -1742,6 +1751,8 @@ onebox:
   facebook_app_access_token:
     default: ""
     secret: true
+  block_onebox_on_redirect:
+    default: false
   cache_onebox_response_body:
     default: false
     hidden: true
@@ -2403,7 +2414,7 @@ uncategorized:
 
   use_polymorphic_bookmarks:
     client: true
-    default: false
+    default: true
     hidden: true
 
   suggest_weekends_in_date_pickers:
