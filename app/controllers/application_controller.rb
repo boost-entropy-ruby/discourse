@@ -102,7 +102,7 @@ class ApplicationController < ActionController::Base
   end
 
   def ember_cli_required?
-    Rails.env.development? && ENV['NO_EMBER_CLI'] != '1' && request.headers['X-Discourse-Ember-CLI'] != 'true'
+    Rails.env.development? && ENV["ALLOW_EMBER_CLI_PROXY_BYPASS"] != "1" && request.headers['X-Discourse-Ember-CLI'] != 'true'
   end
 
   def application_layout
@@ -192,7 +192,7 @@ class ApplicationController < ActionController::Base
         e.description,
         type: :rate_limit,
         status: 429,
-        extras: { wait_seconds: retry_time_in_seconds },
+        extras: { wait_seconds: retry_time_in_seconds, time_left: e&.time_left },
         headers: response_headers
       )
     end
@@ -676,6 +676,7 @@ class ApplicationController < ActionController::Base
 
   def banner_json
     json = ApplicationController.banner_json_cache["json"]
+    return "{}" if !current_user && SiteSetting.login_required?
 
     unless json
       topic = Topic.where(archetype: Archetype.banner).first
